@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 from diagram_renderer.functions.frontmatter import parse_frontmatter
+from diagram_renderer.functions.graph_algorithms import transitive_reduction_indices
 from diagram_renderer.functions.hashing import hash_node_content
 from diagram_renderer.service.graph import Edge, Graph, LinkFilterConfig, Node, RawLink
 from diagram_renderer.service.link_filter import LinkFilter, build_link_filter
@@ -88,7 +90,40 @@ class GraphBuilder:
                 )
             )
 
+        reduce_filters = {config.name for config in self.link_configs if config.transitive_reduction}
+        if reduce_filters:
+            edges = self._reduce_transitive_edges(edges, reduce_filters)
+
         nodes.sort(key=lambda n: n.id)
         edges.sort(key=lambda e: (e.from_id, e.to_id, e.filter_name))
         logger.info("Built graph with %d nodes and %d edges", len(nodes), len(edges))
         return Graph(nodes=tuple(nodes), edges=tuple(edges))
+
+    def _reduce_transitive_edges(self, edges: list[Edge], filter_names: set[str]) -> list[Edge]:
+        """Drop edges implied by a longer path within the same link filter.
+
+        Each filter is reduced independently: a chain built from `depends_on`
+        edges must not be used to justify dropping an `extends` edge, since
+        the two relations are not interchangeable.
+        """
+        by_filter: dict[str, list[Edge]] = defaultdict(list)
+        passthrough: list[Edge] = []
+        for edge in edges:
+            if edge.filter_name in filter_names:
+                by_filter[edge.filter_name].append(edge)
+            else:
+                passthrough.append(edge)
+
+        kept = list(passthrough)
+        for filter_name, group in by_filter.items():
+            pairs = [(edge.from_id, edge.to_id) for edge in group]
+            keep_indices = transitive_reduction_indices(pairs)
+            removed = len(group) - len(keep_indices)
+            if removed:
+                logger.info(
+                    "Filter '%s': dropped %d transitively redundant edge(s)",
+                    filter_name,
+                    removed,
+                )
+            kept.extend(group[i] for i in keep_indices)
+        return kept

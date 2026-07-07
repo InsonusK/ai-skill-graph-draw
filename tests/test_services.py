@@ -66,7 +66,6 @@ class TestConfigLoader:
         task = tasks[0]
         assert task.id == "test-task"
         assert task.source.include == ("*.md",)
-        assert task.metadata.label_field == "name"
         assert task.metadata.subpath == "#Foo"
         assert task.output.destination == tmp_path / "out.canvas"
 
@@ -102,6 +101,63 @@ class TestConfigLoader:
             "      - name: depends_on\n"
             "        field: depends_on\n"
             "        on_unresolved: invalid\n"
+            "    output:\n"
+            "      destination: out.canvas\n"
+        )
+        loader = ConfigLoader(tmp_path)
+        tasks = loader.load_from_file(config_path)
+        assert tasks == []
+
+    def test_parses_transitive_reduction(self, tmp_path: Path) -> None:
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text(
+            "tasks:\n"
+            "  - id: t\n"
+            "    source:\n"
+            "      include:\n"
+            "        - '*.md'\n"
+            "    links:\n"
+            "      - name: depends_on\n"
+            "        field: depends_on\n"
+            "        transitive_reduction: true\n"
+            "    output:\n"
+            "      destination: out.canvas\n"
+        )
+        loader = ConfigLoader(tmp_path)
+        tasks = loader.load_from_file(config_path)
+        assert len(tasks) == 1
+        assert tasks[0].links[0].transitive_reduction is True
+
+    def test_transitive_reduction_defaults_to_false(self, tmp_path: Path) -> None:
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text(
+            "tasks:\n"
+            "  - id: t\n"
+            "    source:\n"
+            "      include:\n"
+            "        - '*.md'\n"
+            "    links:\n"
+            "      - name: depends_on\n"
+            "        field: depends_on\n"
+            "    output:\n"
+            "      destination: out.canvas\n"
+        )
+        loader = ConfigLoader(tmp_path)
+        tasks = loader.load_from_file(config_path)
+        assert tasks[0].links[0].transitive_reduction is False
+
+    def test_invalid_transitive_reduction_type(self, tmp_path: Path) -> None:
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text(
+            "tasks:\n"
+            "  - id: bad\n"
+            "    source:\n"
+            "      include:\n"
+            "        - '*.md'\n"
+            "    links:\n"
+            "      - name: depends_on\n"
+            "        field: depends_on\n"
+            "        transitive_reduction: not-a-bool\n"
             "    output:\n"
             "      destination: out.canvas\n"
         )
@@ -153,14 +209,14 @@ class TestFrontmatterFieldLinkFilter:
 
 
 class TestMetadataExtractor:
-    def test_extracts_label_and_id(self, tmp_path: Path) -> None:
+    def test_extracts_id_and_stem_label(self, tmp_path: Path) -> None:
         file = tmp_path / "skills" / "a.md"
         file.parent.mkdir()
         file.write_text("")
-        extractor = MetadataExtractor(tmp_path, MetadataConfig(label_field="name"))
+        extractor = MetadataExtractor(tmp_path, MetadataConfig())
         meta = extractor.extract(file, {"name": "Nice Name"})
         assert meta.id == "skills/a.md"
-        assert meta.label == "Nice Name"
+        assert meta.label == "a"
 
     def test_fallback_to_stem(self, tmp_path: Path) -> None:
         file = tmp_path / "a.md"
@@ -209,6 +265,92 @@ class TestGraphBuilder:
         assert len(graph.edges) == 1
         assert graph.edges[0].from_id == "a.md"
         assert graph.edges[0].to_id == "b.md"
+
+    def test_transitive_reduction_drops_redundant_edge(self, tmp_path: Path) -> None:
+        # A -> B -> C and a direct A -> C: the direct edge is implied by the
+        # chain and should be hidden when transitive_reduction is enabled.
+        a = tmp_path / "a.md"
+        b = tmp_path / "b.md"
+        c = tmp_path / "c.md"
+        a.write_text("---\ndepends_on:\n  - [[b.md]]\n  - [[c.md]]\n---\n")
+        b.write_text("---\ndepends_on:\n  - [[c.md]]\n---\n")
+        c.write_text("---\nname: C\n---\n")
+
+        extractor = MetadataExtractor(tmp_path, MetadataConfig())
+        builder = GraphBuilder(
+            tmp_path,
+            extractor,
+            (
+                LinkFilterConfig(
+                    "depends_on",
+                    "frontmatter_field",
+                    "depends_on",
+                    transitive_reduction=True,
+                ),
+            ),
+        )
+        graph = builder.build([a, b, c])
+        pairs = {(edge.from_id, edge.to_id) for edge in graph.edges}
+        assert pairs == {("a.md", "b.md"), ("b.md", "c.md")}
+
+    def test_transitive_reduction_disabled_keeps_redundant_edge(self, tmp_path: Path) -> None:
+        a = tmp_path / "a.md"
+        b = tmp_path / "b.md"
+        c = tmp_path / "c.md"
+        a.write_text("---\ndepends_on:\n  - [[b.md]]\n  - [[c.md]]\n---\n")
+        b.write_text("---\ndepends_on:\n  - [[c.md]]\n---\n")
+        c.write_text("---\nname: C\n---\n")
+
+        extractor = MetadataExtractor(tmp_path, MetadataConfig())
+        builder = GraphBuilder(
+            tmp_path,
+            extractor,
+            (LinkFilterConfig("depends_on", "frontmatter_field", "depends_on"),),
+        )
+        graph = builder.build([a, b, c])
+        pairs = {(edge.from_id, edge.to_id) for edge in graph.edges}
+        assert pairs == {("a.md", "b.md"), ("b.md", "c.md"), ("a.md", "c.md")}
+
+    def test_transitive_reduction_scoped_per_filter(self, tmp_path: Path) -> None:
+        # depends_on forms A -> B -> C plus a redundant A -> C, but the
+        # extends filter only has a single A -> C edge and must survive
+        # even though depends_on has a matching (u, v) chain.
+        a = tmp_path / "a.md"
+        b = tmp_path / "b.md"
+        c = tmp_path / "c.md"
+        a.write_text(
+            "---\n"
+            "depends_on:\n"
+            "  - [[b.md]]\n"
+            "  - [[c.md]]\n"
+            "extends:\n"
+            "  - [[c.md]]\n"
+            "---\n"
+        )
+        b.write_text("---\ndepends_on:\n  - [[c.md]]\n---\n")
+        c.write_text("---\nname: C\n---\n")
+
+        extractor = MetadataExtractor(tmp_path, MetadataConfig())
+        builder = GraphBuilder(
+            tmp_path,
+            extractor,
+            (
+                LinkFilterConfig(
+                    "depends_on",
+                    "frontmatter_field",
+                    "depends_on",
+                    transitive_reduction=True,
+                ),
+                LinkFilterConfig("extends", "frontmatter_field", "extends"),
+            ),
+        )
+        graph = builder.build([a, b, c])
+        triples = {(edge.from_id, edge.to_id, edge.filter_name) for edge in graph.edges}
+        assert triples == {
+            ("a.md", "b.md", "depends_on"),
+            ("b.md", "c.md", "depends_on"),
+            ("a.md", "c.md", "extends"),
+        }
 
 
 class TestCacheManager:
@@ -392,7 +534,7 @@ class TestOrchestrator:
         task = RenderTask(
             id="test",
             source=SourceConfig(include=("skills/*.skill.md",)),
-            metadata=MetadataConfig(label_field="name"),
+            metadata=MetadataConfig(),
             links=(LinkFilterConfig("depends_on", "frontmatter_field", "depends_on"),),
             layout=LayoutConfig(),
             output=OutputConfig(

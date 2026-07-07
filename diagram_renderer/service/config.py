@@ -63,7 +63,6 @@ class ConfigLoader:
         include: list[str],
         link_field: str,
         output: Path,
-        label_field: str = "name",
         subpath: str | None = None,
         exclude: list[str] | None = None,
         on_unresolved: str = "skip",
@@ -72,6 +71,7 @@ class ConfigLoader:
         output_format: str = "obsidian_canvas",
         edge_color: str | None = None,
         edge_label: str | None = None,
+        transitive_reduction: bool = False,
     ) -> RenderTask:
         """Build a single task from explicit CLI arguments."""
         return RenderTask(
@@ -80,7 +80,7 @@ class ConfigLoader:
                 include=tuple(include),
                 exclude=tuple(exclude or []),
             ),
-            metadata=MetadataConfig(label_field=label_field, subpath=subpath),
+            metadata=MetadataConfig(subpath=subpath),
             links=(
                 LinkFilterConfig(
                     name=link_field,
@@ -88,6 +88,7 @@ class ConfigLoader:
                     field=link_field,
                     on_unresolved=on_unresolved,
                     style=EdgeStyle(color=edge_color, label=edge_label),
+                    transitive_reduction=transitive_reduction,
                 ),
             ),
             layout=LayoutConfig(engine=layout_engine, direction=layout_direction),
@@ -128,7 +129,6 @@ class ConfigLoader:
         if not isinstance(data, dict):
             return MetadataConfig()
         return MetadataConfig(
-            label_field=data.get("label_field", "name"),
             subpath=data.get("subpath"),
         )
 
@@ -157,6 +157,11 @@ class ConfigLoader:
                 color=style_data.get("color"),
                 label=style_data.get("label"),
             )
+            transitive_reduction = item.get("transitive_reduction", False)
+            if not isinstance(transitive_reduction, bool):
+                raise ConfigValidationError(
+                    f"Field 'transitive_reduction' of link filter '{name}' must be a boolean"
+                )
             configs.append(
                 LinkFilterConfig(
                     name=name,
@@ -164,6 +169,7 @@ class ConfigLoader:
                     field=field,
                     on_unresolved=on_unresolved,
                     style=style,
+                    transitive_reduction=transitive_reduction,
                 )
             )
         return tuple(configs)

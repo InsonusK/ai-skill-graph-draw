@@ -14,3 +14,9 @@ coverage:
 
 diagram-renderer:
 	.venv/bin/python -m diagram_renderer
+
+demo-render:
+	cd demo && PYTHONPATH=.. ../.venv/bin/python -m diagram_renderer render --config diagrams.yaml
+
+demo-render-force:
+	cd demo && PYTHONPATH=.. ../.venv/bin/python -m diagram_renderer render --config diagrams.yaml --force

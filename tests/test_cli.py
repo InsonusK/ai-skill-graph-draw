@@ -31,8 +31,6 @@ class TestCli:
                 "*.md",
                 "--link-field",
                 "depends_on",
-                "--label-field",
-                "name",
                 "--output",
                 str(output),
                 "--cache-dir",

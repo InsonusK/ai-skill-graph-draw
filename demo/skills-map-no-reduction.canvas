@@ -10,6 +10,15 @@
       "toSide": "left"
     },
     {
+      "color": "4",
+      "fromNode": "skills/dotnet/domain-driven-design.skill.md",
+      "fromSide": "right",
+      "id": "3bba08928e572c38",
+      "label": "depends on",
+      "toNode": "skills/dotnet/value-objects.skill.md",
+      "toSide": "left"
+    },
+    {
       "color": "2",
       "fromNode": "skills/dotnet/entities.skill.md",
       "fromSide": "right",

@@ -8,6 +8,7 @@ import pytest
 
 from diagram_renderer.functions.files import collect_files
 from diagram_renderer.functions.frontmatter import parse_frontmatter
+from diagram_renderer.functions.graph_algorithms import transitive_reduction_indices
 from diagram_renderer.functions.hashing import hash_file_set, hash_node_content, hash_text
 from diagram_renderer.functions.wikilinks import extract_wikilinks
 
@@ -80,6 +81,31 @@ class TestHashing:
         assert hash_node_content(frontmatter, links) == hash_node_content(
             frontmatter, list(links)
         )
+
+
+class TestTransitiveReduction:
+    def test_drops_direct_edge_implied_by_chain(self) -> None:
+        pairs = [("A", "B"), ("B", "C"), ("A", "C")]
+        assert transitive_reduction_indices(pairs) == [0, 1]
+
+    def test_keeps_edges_without_alternate_path(self) -> None:
+        pairs = [("A", "B"), ("B", "C")]
+        assert transitive_reduction_indices(pairs) == [0, 1]
+
+    def test_diamond_drops_only_the_shortcut(self) -> None:
+        # A -> B -> D and A -> C -> D both reach D, so the direct A -> D
+        # edge is redundant; B -> D and C -> D are each the only path to D
+        # from their source and must be kept.
+        pairs = [("A", "B"), ("A", "C"), ("B", "D"), ("C", "D"), ("A", "D")]
+        assert transitive_reduction_indices(pairs) == [0, 1, 2, 3]
+
+    def test_unrelated_pairs_are_all_kept(self) -> None:
+        pairs = [("A", "B"), ("C", "D")]
+        assert transitive_reduction_indices(pairs) == [0, 1]
+
+    def test_cycle_does_not_hang_and_keeps_edges(self) -> None:
+        pairs = [("A", "B"), ("B", "A")]
+        assert transitive_reduction_indices(pairs) == [0, 1]
 
 
 class TestCollectFiles:

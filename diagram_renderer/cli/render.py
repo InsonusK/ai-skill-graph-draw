@@ -60,11 +60,6 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         help="Frontmatter field containing wiki-links.",
     )
     parser.add_argument(
-        "--label-field",
-        default="name",
-        help="Frontmatter field used as node label.",
-    )
-    parser.add_argument(
         "--subpath",
         help="Optional subpath added to file links in Canvas.",
     )
@@ -101,6 +96,11 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     parser.add_argument(
         "--edge-label",
         help="Edge label for single-task mode.",
+    )
+    parser.add_argument(
+        "--transitive-reduction",
+        action="store_true",
+        help="Hide edges implied by a longer path between the same nodes.",
     )
 
     parser.set_defaults(run=run)
@@ -149,7 +149,6 @@ def _build_single_task(args: argparse.Namespace, repo_root: Path) -> RenderTask 
         include=args.includes,
         exclude=args.excludes or [],
         link_field=args.link_field,
-        label_field=args.label_field,
         subpath=args.subpath,
         output=args.output,
         on_unresolved=args.on_unresolved,
@@ -158,4 +157,5 @@ def _build_single_task(args: argparse.Namespace, repo_root: Path) -> RenderTask 
         output_format=args.output_format,
         edge_color=args.edge_color,
         edge_label=args.edge_label,
+        transitive_reduction=args.transitive_reduction,
     )

@@ -117,6 +117,7 @@ class LinkFilterConfig:
     field: str
     on_unresolved: str = "skip"
     style: EdgeStyle = field(default_factory=EdgeStyle)
+    transitive_reduction: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,7 +132,6 @@ class SourceConfig:
 class MetadataConfig:
     """Node metadata extraction configuration."""
 
-    label_field: str = "name"
     subpath: str | None = None
 
 
