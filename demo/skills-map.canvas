@@ -1,0 +1,96 @@
+{
+  "edges": [
+    {
+      "color": "4",
+      "fromNode": "demo/skills/dotnet/domain-driven-design.skill.md",
+      "fromSide": "right",
+      "id": "986c6d975c6dfc1f",
+      "label": "depends on",
+      "toNode": "demo/skills/dotnet/value-objects.skill.md",
+      "toSide": "left"
+    },
+    {
+      "color": "4",
+      "fromNode": "demo/skills/dotnet/domain-driven-design.skill.md",
+      "fromSide": "right",
+      "id": "69beaacb0d8d5028",
+      "label": "depends on",
+      "toNode": "demo/skills/python/clean-code.skill.md",
+      "toSide": "left"
+    },
+    {
+      "color": "4",
+      "fromNode": "demo/skills/dotnet/entities.skill.md",
+      "fromSide": "right",
+      "id": "be7443d00e927568",
+      "label": "depends on",
+      "toNode": "demo/skills/dotnet/domain-driven-design.skill.md",
+      "toSide": "left"
+    },
+    {
+      "color": "4",
+      "fromNode": "demo/skills/dotnet/value-objects.skill.md",
+      "fromSide": "right",
+      "id": "cce57d1fdcb25ef6",
+      "label": "depends on",
+      "toNode": "demo/skills/dotnet/entities.skill.md",
+      "toSide": "left"
+    },
+    {
+      "color": "4",
+      "fromNode": "demo/skills/python/clean-code.skill.md",
+      "fromSide": "right",
+      "id": "c06940b492db0810",
+      "label": "depends on",
+      "toNode": "demo/skills/python/unit-testing.skill.md",
+      "toSide": "left"
+    }
+  ],
+  "nodes": [
+    {
+      "file": "demo/skills/dotnet/domain-driven-design.skill.md",
+      "height": 400.0,
+      "id": "demo/skills/dotnet/domain-driven-design.skill.md",
+      "type": "file",
+      "width": 400.0,
+      "x": 0.0,
+      "y": 0.0
+    },
+    {
+      "file": "demo/skills/dotnet/entities.skill.md",
+      "height": 400.0,
+      "id": "demo/skills/dotnet/entities.skill.md",
+      "type": "file",
+      "width": 400.0,
+      "x": 1200.0,
+      "y": 0.0
+    },
+    {
+      "file": "demo/skills/dotnet/value-objects.skill.md",
+      "height": 400.0,
+      "id": "demo/skills/dotnet/value-objects.skill.md",
+      "type": "file",
+      "width": 400.0,
+      "x": 600.0,
+      "y": 0.0
+    },
+    {
+      "file": "demo/skills/python/clean-code.skill.md",
+      "height": 400.0,
+      "id": "demo/skills/python/clean-code.skill.md",
+      "type": "file",
+      "width": 400.0,
+      "x": 600.0,
+      "y": 500.0
+    },
+    {
+      "file": "demo/skills/python/unit-testing.skill.md",
+      "height": 400.0,
+      "id": "demo/skills/python/unit-testing.skill.md",
+      "type": "file",
+      "width": 400.0,
+      "x": 1200.0,
+      "y": 500.0
+    }
+  ]
+}

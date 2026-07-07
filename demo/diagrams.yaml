@@ -1,0 +1,24 @@
+cache_dir: demo/.cache
+
+tasks:
+  - id: demo-skills-depends-on
+    source:
+      include:
+        - "demo/skills/**/*.skill.md"
+      exclude: []
+    metadata:
+      label_field: name
+    links:
+      - name: depends_on
+        type: frontmatter_field
+        field: depends_on
+        on_unresolved: skip
+        style:
+          color: "4"
+          label: "depends on"
+    layout:
+      engine: layered
+      direction: LR
+    output:
+      format: obsidian_canvas
+      destination: "demo/skills-map.canvas"
