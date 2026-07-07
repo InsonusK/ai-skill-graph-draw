@@ -1,0 +1,30 @@
+sequenceDiagram
+    autonumber
+    actor User
+    participant cli as cli.py
+    participant cli_cmd as cli/backup.py
+    participant cmd as command/backup.py
+    participant svc as functions/service
+    participant log as logging
+
+    User->>cli: python {App}/cli.py backup --source x --destination y
+    activate cli
+    cli->>log: configure logging
+    cli->>cli_cmd: dispatch parsed args
+    activate cli_cmd
+    cli_cmd->>cli_cmd: convert Namespace to typed values
+    cli_cmd->>log: info "Starting backup..."
+    cli_cmd->>cmd: run(source, destination)
+    activate cmd
+    cmd->>svc: list_files / backup
+    activate svc
+    svc-->>cmd: result
+    deactivate svc
+    cmd->>log: info / error / critical
+    cmd-->>cli_cmd: BackupResult
+    deactivate cmd
+    cli_cmd->>log: info "Backup completed"
+    cli_cmd-->>cli: exit code
+    deactivate cli_cmd
+    cli-->>User: exit 0 / non-zero
+    deactivate cli
