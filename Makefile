@@ -4,3 +4,13 @@ init:
 
 ai-skill-sync:
 	.venv/bin/python3 aism sync
+
+test:
+	.venv/bin/python -m pytest tests/ -v
+
+coverage:
+	.venv/bin/python -m coverage run -m pytest tests/ -q
+	.venv/bin/python -m coverage report -m
+
+diagram-renderer:
+	.venv/bin/python -m diagram_renderer
