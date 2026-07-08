@@ -1,0 +1,86 @@
+cache_dir: .cache
+
+tasks:
+  - id: demo-skills-depends-on
+    source:
+      include:
+        - "skills/**/*.skill.md"
+      exclude: []
+    metadata:
+      subpath: "#Summary"
+    links:
+      - name: depends_on
+        type: frontmatter_field
+        field: depends_on
+        on_unresolved: skip
+        transitive_reduction: true
+        style:
+          color: "4"
+          label: "depends on"
+      - name: extends
+        type: frontmatter_field
+        field: extends
+        style:
+          color: "2"
+          label: "extends"
+    layout:
+      engine: layered
+      direction: LR
+    output:
+      format: obsidian_canvas
+      destination: "skills-map.canvas"
+  - id: demo-skills-depends-on-no-reduction
+    source:
+      include:
+        - "skills/**/*.skill.md"
+      exclude: []
+    metadata:
+      subpath: "#Summary"
+    links:
+      - name: depends_on
+        type: frontmatter_field
+        field: depends_on
+        on_unresolved: skip
+        style:
+          color: "4"
+          label: "depends on"
+      - name: extends
+        type: frontmatter_field
+        field: extends
+        style:
+          color: "2"
+          label: "extends"
+    layout:
+      engine: layered
+      direction: LR
+    output:
+      format: obsidian_canvas
+      destination: "skills-map-no-reduction.canvas"
+  - id: demo-skills-depends-on-igraph-sugiyama
+    source:
+      include:
+        - "skills/**/*.skill.md"
+      exclude: []
+    metadata:
+      subpath: "#Summary"
+    links:
+      - name: depends_on
+        type: frontmatter_field
+        field: depends_on
+        on_unresolved: skip
+        transitive_reduction: true
+        style:
+          color: "4"
+          label: "depends on"
+      - name: extends
+        type: frontmatter_field
+        field: extends
+        style:
+          color: "2"
+          label: "extends"
+    layout:
+      engine: igraph_sugiyama
+      direction: LR
+    output:
+      format: obsidian_canvas
+      destination: "skills-map-igraph-sugiyama.canvas"
