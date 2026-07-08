@@ -1,4 +1,4 @@
-"""Build a Graph from collected files, metadata and resolved links."""
+"""Default graph builder: assembles Graph from files, metadata and links."""
 
 from __future__ import annotations
 
@@ -11,9 +11,9 @@ from diagram_renderer.functions.frontmatter import parse_frontmatter
 from diagram_renderer.functions.graph_algorithms import transitive_reduction_indices
 from diagram_renderer.functions.hashing import hash_node_content
 from diagram_renderer.service.graph import Edge, Graph, LinkFilterConfig, Node, RawLink
-from diagram_renderer.service.link_filter import LinkFilter, build_link_filter
-from diagram_renderer.service.link_resolver import LinkResolver
-from diagram_renderer.service.metadata_extractor import MetadataExtractor
+from diagram_renderer.service.link_filters.factory import build_link_filter
+from diagram_renderer.service.link_resolver.resolver import LinkResolver
+from diagram_renderer.service.metadata_extractor.extractor import MetadataExtractor
 
 logger = logging.getLogger(__name__)
 

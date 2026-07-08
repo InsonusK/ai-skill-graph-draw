@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 
 from diagram_renderer.command import render as render_command
-from diagram_renderer.service.config import ConfigLoader, DEFAULT_CACHE_DIR
+from diagram_renderer.service.config.loader import ConfigLoader, DEFAULT_CACHE_DIR
 from diagram_renderer.service.graph import RenderTask
 
 logger = logging.getLogger(__name__)

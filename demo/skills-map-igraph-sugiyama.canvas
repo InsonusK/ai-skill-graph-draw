@@ -1,0 +1,110 @@
+{
+  "edges": [
+    {
+      "color": "4",
+      "fromNode": "skills/dotnet/domain-driven-design.skill.md",
+      "fromSide": "right",
+      "id": "5f23802a38bc88a7",
+      "label": "depends on",
+      "toNode": "skills/dotnet/entities.skill.md",
+      "toSide": "left"
+    },
+    {
+      "color": "2",
+      "fromNode": "skills/dotnet/entities.skill.md",
+      "fromSide": "right",
+      "id": "511c76af353cc20b",
+      "label": "extends",
+      "toNode": "skills/dotnet/domain-driven-design.skill.md",
+      "toSide": "left"
+    },
+    {
+      "color": "4",
+      "fromNode": "skills/dotnet/entities.skill.md",
+      "fromSide": "right",
+      "id": "a8c24e0c1a27f3c5",
+      "label": "depends on",
+      "toNode": "skills/dotnet/value-objects.skill.md",
+      "toSide": "left"
+    },
+    {
+      "color": "2",
+      "fromNode": "skills/dotnet/value-objects.skill.md",
+      "fromSide": "right",
+      "id": "46f2dc6b0217cdaf",
+      "label": "extends",
+      "toNode": "skills/dotnet/domain-driven-design.skill.md",
+      "toSide": "left"
+    },
+    {
+      "color": "4",
+      "fromNode": "skills/dotnet/value-objects.skill.md",
+      "fromSide": "right",
+      "id": "139476ea9e1562e7",
+      "label": "depends on",
+      "toNode": "skills/python/clean-code.skill.md",
+      "toSide": "left"
+    },
+    {
+      "color": "4",
+      "fromNode": "skills/python/clean-code.skill.md",
+      "fromSide": "right",
+      "id": "cce0876756c54d68",
+      "label": "depends on",
+      "toNode": "skills/python/unit-testing.skill.md",
+      "toSide": "left"
+    }
+  ],
+  "nodes": [
+    {
+      "file": "skills/dotnet/domain-driven-design.skill.md",
+      "height": 400.0,
+      "id": "skills/dotnet/domain-driven-design.skill.md",
+      "subpath": "#Summary",
+      "type": "file",
+      "width": 400.0,
+      "x": 1200.0,
+      "y": 500.0
+    },
+    {
+      "file": "skills/dotnet/entities.skill.md",
+      "height": 400.0,
+      "id": "skills/dotnet/entities.skill.md",
+      "subpath": "#Summary",
+      "type": "file",
+      "width": 400.0,
+      "x": 0.0,
+      "y": 500.0
+    },
+    {
+      "file": "skills/dotnet/value-objects.skill.md",
+      "height": 400.0,
+      "id": "skills/dotnet/value-objects.skill.md",
+      "subpath": "#Summary",
+      "type": "file",
+      "width": 400.0,
+      "x": 600.0,
+      "y": 0.0
+    },
+    {
+      "file": "skills/python/clean-code.skill.md",
+      "height": 400.0,
+      "id": "skills/python/clean-code.skill.md",
+      "subpath": "#Summary",
+      "type": "file",
+      "width": 400.0,
+      "x": 1200.0,
+      "y": 0.0
+    },
+    {
+      "file": "skills/python/unit-testing.skill.md",
+      "height": 400.0,
+      "id": "skills/python/unit-testing.skill.md",
+      "subpath": "#Summary",
+      "type": "file",
+      "width": 400.0,
+      "x": 1800.0,
+      "y": 0.0
+    }
+  ]
+}

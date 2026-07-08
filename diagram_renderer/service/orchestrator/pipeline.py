@@ -1,17 +1,18 @@
-"""Orchestrate one render task end-to-end."""
+"""Default pipeline implementation wiring all pipeline stages together."""
 
 from __future__ import annotations
 
 import logging
 from pathlib import Path
 
-from diagram_renderer.service.cache import CacheManager
-from diagram_renderer.service.diff import DiffEngine, DiffResult
+from diagram_renderer.service.cache.manager import CacheManager
+from diagram_renderer.service.diff.diff_engine import DiffEngine
 from diagram_renderer.service.graph import Graph, Rect, RenderTask
-from diagram_renderer.service.graph_builder import GraphBuilder
-from diagram_renderer.service.layout import build_layout_engine
-from diagram_renderer.service.metadata_extractor import MetadataExtractor
-from diagram_renderer.service.source_collector import SourceCollector
+from diagram_renderer.service.graph_builder.builder import GraphBuilder
+from diagram_renderer.service.layout.factory import build_layout_engine
+from diagram_renderer.service.metadata_extractor.extractor import MetadataExtractor
+from diagram_renderer.service.source_collector.collector import SourceCollector
+from diagram_renderer.service.writers.factory import build_writer
 
 logger = logging.getLogger(__name__)
 
@@ -86,21 +87,17 @@ class Orchestrator:
             if node.id in stable_positions and node.id in positions
         }
 
-        if task.output.format == "obsidian_canvas":
-            from diagram_renderer.service.canvas_writer import ObsidianCanvasWriter
-
-            writer = ObsidianCanvasWriter(
-                repo_root=self.repo_root,
-                direction=task.layout.direction,
-            )
-            writer.write(
-                graph=graph,
-                positions=positions,
-                destination=task.output.destination,
-                unchanged=unchanged,
-            )
-        else:
-            raise ValueError(f"Unsupported output format: {task.output.format}")
+        writer = build_writer(
+            task.output.format,
+            repo_root=self.repo_root,
+            direction=task.layout.direction,
+        )
+        writer.write(
+            graph=graph,
+            positions=positions,
+            destination=task.output.destination,
+            unchanged=unchanged,
+        )
 
         self.cache_manager.save(task.id, file_set_hash, graph, positions)
         logger.info("Task '%s' completed successfully", task.id)

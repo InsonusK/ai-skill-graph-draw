@@ -6,10 +6,10 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from diagram_renderer.service.cache import CacheManager
-from diagram_renderer.service.config import ConfigLoader
+from diagram_renderer.service.cache.manager import CacheManager
+from diagram_renderer.service.config.loader import ConfigLoader
 from diagram_renderer.service.graph import RenderTask
-from diagram_renderer.service.orchestrator import Orchestrator
+from diagram_renderer.service.orchestrator.pipeline import Orchestrator
 
 logger = logging.getLogger(__name__)
 

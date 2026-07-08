@@ -1,4 +1,4 @@
-"""Resolve raw wiki-links to nodes in the collected graph."""
+"""Default link resolver: repo-relative path matching."""
 
 from __future__ import annotations
 

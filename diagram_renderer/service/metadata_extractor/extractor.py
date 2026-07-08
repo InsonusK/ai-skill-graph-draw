@@ -1,4 +1,4 @@
-"""Extract node metadata from markdown files."""
+"""Default metadata extractor: repo-relative path id + file stem label."""
 
 from __future__ import annotations
 

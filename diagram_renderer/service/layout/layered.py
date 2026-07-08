@@ -1,28 +1,20 @@
-"""Layout engines for assigning node coordinates."""
+"""Hand-rolled Sugiyama-like layered layout, pure Python, no dependencies."""
 
 from __future__ import annotations
 
 import logging
-from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Any
 
 from diagram_renderer.service.graph import Graph, Rect
+from diagram_renderer.service.layout.base import (
+    H_SPACING,
+    NODE_HEIGHT,
+    NODE_WIDTH,
+    V_SPACING,
+    LayoutEngine,
+)
+from diagram_renderer.service.layout.support import place_new_nodes_near_fixed
 
 logger = logging.getLogger(__name__)
-
-NODE_WIDTH = 400.0
-NODE_HEIGHT = 400.0
-H_SPACING = 200.0
-V_SPACING = 100.0
-
-
-class LayoutEngine(ABC):
-    """Interface for layout engines."""
-
-    @abstractmethod
-    def place(self, graph: Graph, fixed_positions: dict[str, Rect]) -> dict[str, Rect]:
-        """Return coordinates for all nodes, preserving *fixed_positions*."""
 
 
 class LayeredLayoutEngine(LayoutEngine):
@@ -49,7 +41,17 @@ class LayeredLayoutEngine(LayoutEngine):
         if not fixed_positions:
             return self._full_layout(graph)
 
-        return self._incremental_layout(graph, fixed_positions)
+        layers = self._compute_layers(graph)
+        layer_by_node = {node_id: idx for idx, layer in enumerate(layers) for node_id in layer}
+        return place_new_nodes_near_fixed(
+            graph=graph,
+            fixed_positions=fixed_positions,
+            layer_by_node=layer_by_node,
+            node_width=self.node_width,
+            node_height=self.node_height,
+            h_spacing=self.h_spacing,
+            v_spacing=self.v_spacing,
+        )
 
     def _full_layout(self, graph: Graph) -> dict[str, Rect]:
         layers = self._compute_layers(graph)
@@ -61,63 +63,6 @@ class LayeredLayoutEngine(LayoutEngine):
                 y = node_index * (self.node_height + self.v_spacing)
                 positions[node_id] = Rect(x, y, self.node_width, self.node_height)
         return positions
-
-    def _incremental_layout(
-        self, graph: Graph, fixed_positions: dict[str, Rect]
-    ) -> dict[str, Rect]:
-        layers = self._compute_layers(graph)
-        node_to_layer = {node_id: idx for idx, layer in enumerate(layers) for node_id in layer}
-
-        positions = dict(fixed_positions)
-        added = [node.id for node in graph.nodes if node.id not in fixed_positions]
-        added.sort()
-
-        # Place each new node near the average position of its fixed neighbors.
-        adjacency = self._adjacency(graph)
-        for node_id in added:
-            layer = node_to_layer[node_id]
-            x = layer * (self.node_width + self.h_spacing)
-
-            neighbor_positions = [
-                positions[neighbor]
-                for neighbor in adjacency.get(node_id, set())
-                if neighbor in positions
-            ]
-            if neighbor_positions:
-                y = sum(p.y for p in neighbor_positions) / len(neighbor_positions)
-            else:
-                y = 0.0
-
-            # Avoid overlapping with existing nodes in the same horizontal band.
-            y = self._resolve_overlap(node_id, x, y, positions)
-            positions[node_id] = Rect(x, y, self.node_width, self.node_height)
-
-        return positions
-
-    def _resolve_overlap(
-        self, node_id: str, x: float, y: float, positions: dict[str, Rect]
-    ) -> float:
-        """Shift *y* vertically so the new node does not overlap existing ones."""
-        step = self.node_height + self.v_spacing
-        existing = [rect for nid, rect in positions.items() if nid != node_id]
-        candidate_y = y
-        for _ in range(1000):
-            new_rect = Rect(x, candidate_y, self.node_width, self.node_height)
-            if not any(self._rects_overlap(new_rect, rect) for rect in existing):
-                return candidate_y
-            candidate_y += step
-        logger.warning("Could not resolve overlap for node '%s' after 1000 attempts", node_id)
-        return candidate_y
-
-    @staticmethod
-    def _rects_overlap(a: Rect, b: Rect) -> bool:
-        """Return True if two rectangles overlap (excluding borders)."""
-        return (
-            a.x < b.x + b.width
-            and a.x + a.width > b.x
-            and a.y < b.y + b.height
-            and a.y + a.height > b.y
-        )
 
     def _compute_layers(self, graph: Graph) -> list[list[str]]:
         """Assign each node to a layer based on a DAG of the graph.
@@ -235,11 +180,3 @@ class LayeredLayoutEngine(LayoutEngine):
                 len(back_edges),
             )
         return dag_edges
-
-
-def build_layout_engine(config: dict[str, Any]) -> LayoutEngine:
-    """Factory for layout engines."""
-    engine = config.get("engine", "layered")
-    if engine == "layered":
-        return LayeredLayoutEngine(direction=config.get("direction", "LR"))
-    raise ValueError(f"Unsupported layout engine: {engine}")

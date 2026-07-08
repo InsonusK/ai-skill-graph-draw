@@ -1,4 +1,5 @@
 ai-skill-manager @ git+https://github.com/InsonusK/ai-skill-manager.git
 PyYAML>=6.0
+python-igraph>=1.0
 pytest>=8.0
 coverage>=7.0

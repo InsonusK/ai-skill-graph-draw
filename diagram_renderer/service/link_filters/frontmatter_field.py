@@ -1,28 +1,16 @@
-"""Pluggable link filters."""
+"""Link filter that reads wiki-links from a frontmatter list field."""
 
 from __future__ import annotations
 
 import logging
-from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
 from diagram_renderer.functions.wikilinks import extract_wikilinks
-from diagram_renderer.service.graph import EdgeStyle, LinkFilterConfig, RawLink
+from diagram_renderer.service.graph import EdgeStyle, RawLink
+from diagram_renderer.service.link_filters.base import LinkFilter
 
 logger = logging.getLogger(__name__)
-
-
-class LinkFilter(ABC):
-    """Interface for extracting raw links from a markdown file."""
-
-    def __init__(self, name: str, style: EdgeStyle) -> None:
-        self.name = name
-        self.style = style
-
-    @abstractmethod
-    def extract(self, path: Path, content: str, frontmatter: dict[str, Any] | None) -> list[RawLink]:
-        """Return raw links found in the file."""
 
 
 class FrontmatterFieldLinkFilter(LinkFilter):
@@ -84,14 +72,3 @@ class FrontmatterFieldLinkFilter(LinkFilter):
             path,
         )
         return []
-
-
-def build_link_filter(config: LinkFilterConfig) -> LinkFilter:
-    """Build a LinkFilter instance from config."""
-    if config.type != "frontmatter_field":
-        raise ValueError(f"Unsupported link filter type: {config.type}")
-    return FrontmatterFieldLinkFilter(
-        name=config.name,
-        field=config.field,
-        style=config.style,
-    )

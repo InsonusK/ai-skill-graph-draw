@@ -1,4 +1,4 @@
-"""Diff engine: compare current graph with existing canvas file."""
+"""Default diff engine comparing the graph against the on-disk canvas file."""
 
 from __future__ import annotations
 

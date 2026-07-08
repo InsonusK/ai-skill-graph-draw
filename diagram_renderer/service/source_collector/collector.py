@@ -1,4 +1,4 @@
-"""Collect markdown source files for a render task."""
+"""Default source collector: glob-based file selection."""
 
 from __future__ import annotations
 

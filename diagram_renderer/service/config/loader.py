@@ -1,4 +1,4 @@
-"""Configuration loading and validation for render tasks."""
+"""YAML config file and CLI-argument loader for render tasks."""
 
 from __future__ import annotations
 

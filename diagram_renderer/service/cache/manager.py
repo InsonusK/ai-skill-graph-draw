@@ -1,4 +1,4 @@
-"""Cache manager for render tasks."""
+"""Default cache manager: per-task JSON file on disk."""
 
 from __future__ import annotations
 

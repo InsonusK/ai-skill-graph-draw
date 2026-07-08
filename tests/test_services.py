@@ -7,10 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from diagram_renderer.service.cache import CacheManager
-from diagram_renderer.service.canvas_writer import ObsidianCanvasWriter
-from diagram_renderer.service.config import ConfigLoader, ConfigValidationError
-from diagram_renderer.service.diff import DiffEngine
+from diagram_renderer.service.cache.manager import CacheManager
+from diagram_renderer.service.config.loader import ConfigLoader, ConfigValidationError
+from diagram_renderer.service.diff.diff_engine import DiffEngine
 from diagram_renderer.service.graph import (
     Edge,
     EdgeStyle,
@@ -24,13 +23,18 @@ from diagram_renderer.service.graph import (
     RenderTask,
     SourceConfig,
 )
-from diagram_renderer.service.graph_builder import GraphBuilder
-from diagram_renderer.service.layout import LayeredLayoutEngine
-from diagram_renderer.service.link_filter import FrontmatterFieldLinkFilter
-from diagram_renderer.service.link_resolver import LinkResolver
-from diagram_renderer.service.metadata_extractor import MetadataExtractor
-from diagram_renderer.service.orchestrator import Orchestrator
-from diagram_renderer.service.source_collector import SourceCollector
+from diagram_renderer.service.graph_builder.builder import GraphBuilder
+from diagram_renderer.service.layout.factory import build_layout_engine
+from diagram_renderer.service.layout.layered import LayeredLayoutEngine
+from diagram_renderer.service.layout.sugiyama_igraph import IgraphSugiyamaLayoutEngine
+from diagram_renderer.service.link_filters.factory import build_link_filter
+from diagram_renderer.service.link_filters.frontmatter_field import FrontmatterFieldLinkFilter
+from diagram_renderer.service.link_resolver.resolver import LinkResolver
+from diagram_renderer.service.metadata_extractor.extractor import MetadataExtractor
+from diagram_renderer.service.orchestrator.pipeline import Orchestrator
+from diagram_renderer.service.source_collector.collector import SourceCollector
+from diagram_renderer.service.writers.factory import build_writer
+from diagram_renderer.service.writers.obsidian_canvas import ObsidianCanvasWriter
 
 
 class TestConfigLoader:
@@ -206,6 +210,18 @@ class TestFrontmatterFieldLinkFilter:
             "depends_on", "depends_on", EdgeStyle()
         )
         assert filter_.extract(tmp_path / "a.md", "", {}) == []
+
+
+class TestLinkFilterFactory:
+    def test_builds_frontmatter_field_filter(self) -> None:
+        config = LinkFilterConfig("depends_on", "frontmatter_field", "depends_on")
+        filter_ = build_link_filter(config)
+        assert isinstance(filter_, FrontmatterFieldLinkFilter)
+
+    def test_unsupported_type_raises(self) -> None:
+        config = LinkFilterConfig("depends_on", "regex", "depends_on")
+        with pytest.raises(ValueError):
+            build_link_filter(config)
 
 
 class TestMetadataExtractor:
@@ -469,6 +485,69 @@ class TestLayeredLayoutEngine:
         assert len(positions) == 2
 
 
+class TestIgraphSugiyamaLayoutEngine:
+    def test_empty_graph(self) -> None:
+        engine = IgraphSugiyamaLayoutEngine()
+        assert engine.place(Graph(nodes=(), edges=()), {}) == {}
+
+    def test_full_layout(self) -> None:
+        nodes = (
+            Node("a.md", "A", None, Path("/a.md"), "h1"),
+            Node("b.md", "B", None, Path("/b.md"), "h2"),
+        )
+        edges = (Edge("a.md", "b.md", "depends_on"),)
+        graph = Graph(nodes=nodes, edges=edges)
+        engine = IgraphSugiyamaLayoutEngine()
+        positions = engine.place(graph, {})
+        assert "a.md" in positions
+        assert "b.md" in positions
+        assert positions["a.md"].x < positions["b.md"].x
+
+    def test_preserves_fixed_positions(self) -> None:
+        nodes = (
+            Node("a.md", "A", None, Path("/a.md"), "h1"),
+            Node("b.md", "B", None, Path("/b.md"), "h2"),
+            Node("c.md", "C", None, Path("/c.md"), "h3"),
+        )
+        edges = (Edge("a.md", "b.md", "depends_on"), Edge("b.md", "c.md", "depends_on"))
+        graph = Graph(nodes=nodes, edges=edges)
+        engine = IgraphSugiyamaLayoutEngine()
+        fixed = {
+            "a.md": Rect(50.0, 60.0, 100.0, 100.0),
+            "b.md": Rect(700.0, 60.0, 100.0, 100.0),
+        }
+        positions = engine.place(graph, fixed)
+        assert positions["a.md"] == Rect(50.0, 60.0, 100.0, 100.0)
+        assert positions["b.md"] == Rect(700.0, 60.0, 100.0, 100.0)
+        assert "c.md" in positions
+
+    def test_cycle_does_not_raise(self) -> None:
+        nodes = (
+            Node("a.md", "A", None, Path("/a.md"), "h1"),
+            Node("b.md", "B", None, Path("/b.md"), "h2"),
+        )
+        edges = (Edge("a.md", "b.md", "x"), Edge("b.md", "a.md", "x"))
+        graph = Graph(nodes=nodes, edges=edges)
+        engine = IgraphSugiyamaLayoutEngine()
+        positions = engine.place(graph, {})
+        assert len(positions) == 2
+
+
+class TestLayoutFactory:
+    def test_builds_layered_by_default(self) -> None:
+        engine = build_layout_engine({})
+        assert isinstance(engine, LayeredLayoutEngine)
+
+    def test_builds_igraph_sugiyama(self) -> None:
+        engine = build_layout_engine({"engine": "igraph_sugiyama", "direction": "TB"})
+        assert isinstance(engine, IgraphSugiyamaLayoutEngine)
+        assert engine.direction == "TB"
+
+    def test_unsupported_engine_raises(self) -> None:
+        with pytest.raises(ValueError):
+            build_layout_engine({"engine": "does-not-exist"})
+
+
 class TestObsidianCanvasWriter:
     def test_writes_new_canvas(self, tmp_path: Path) -> None:
         a = tmp_path / "a.md"
@@ -517,6 +596,16 @@ class TestObsidianCanvasWriter:
         data = json.loads(canvas.read_text())
         assert data["nodes"][0]["width"] == 999
         assert data["nodes"][0]["height"] == 888
+
+
+class TestWriterFactory:
+    def test_builds_obsidian_canvas_writer(self, tmp_path: Path) -> None:
+        writer = build_writer("obsidian_canvas", repo_root=tmp_path, direction="LR")
+        assert isinstance(writer, ObsidianCanvasWriter)
+
+    def test_unsupported_format_raises(self, tmp_path: Path) -> None:
+        with pytest.raises(ValueError):
+            build_writer("svg", repo_root=tmp_path, direction="LR")
 
 
 class TestOrchestrator:

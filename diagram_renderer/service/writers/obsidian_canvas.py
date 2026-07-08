@@ -1,4 +1,4 @@
-"""Obsidian Canvas (.canvas) writer."""
+"""Obsidian Canvas (.canvas) format writer."""
 
 from __future__ import annotations
 
@@ -8,7 +8,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from diagram_renderer.service.graph import Edge, EdgeStyle, Graph, Node, Rect
+from diagram_renderer.service.graph import Edge, Graph, Node, Rect
+from diagram_renderer.service.writers.base import FormatWriter
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ _DEFAULT_WIDTH = 400.0
 _DEFAULT_HEIGHT = 400.0
 
 
-class ObsidianCanvasWriter:
+class ObsidianCanvasWriter(FormatWriter):
     """Write a Graph to an Obsidian Canvas JSON file, merging with existing content."""
 
     def __init__(self, repo_root: Path, direction: str = "LR") -> None:
