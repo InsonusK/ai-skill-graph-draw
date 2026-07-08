@@ -55,7 +55,7 @@ PYTHONPATH=.. ../.venv/bin/python -m diagram_renderer render --config diagrams.y
 5. Move a node manually.
 6. Re-run the command — the moved node keeps its position if its content did not change, regardless of which layout engine the task uses.
 7. Add a new `.skill.md` file and link it from an existing one — the new node appears next to its neighbors.
-8. Try `layout.direction: TB` on any task and re-render with `--force` to see the edge-connector sides change (note: only edge sides change, not node coordinates — see `docs/configuration.md`).
+8. Look at `fromSide`/`toSide` in `skills-map.canvas`: the `extends` edge from Entities to Domain-Driven Design has `fromSide: left, toSide: right`, because DDD sits to the *left* of Entities in that layout — these are computed per edge from actual node coordinates, not from `layout.direction` (`docs/configuration.md#output`). Move a node in Obsidian to sit above/below its neighbor instead of beside it, re-render, and watch the connecting edge's sides flip to `top`/`bottom`.
 
 ## Learn more
 

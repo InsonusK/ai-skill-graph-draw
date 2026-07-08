@@ -12,11 +12,11 @@
     {
       "color": "2",
       "fromNode": "skills/dotnet/entities.skill.md",
-      "fromSide": "right",
+      "fromSide": "left",
       "id": "511c76af353cc20b",
       "label": "extends",
       "toNode": "skills/dotnet/domain-driven-design.skill.md",
-      "toSide": "left"
+      "toSide": "right"
     },
     {
       "color": "4",
@@ -30,11 +30,11 @@
     {
       "color": "2",
       "fromNode": "skills/dotnet/value-objects.skill.md",
-      "fromSide": "right",
+      "fromSide": "left",
       "id": "46f2dc6b0217cdaf",
       "label": "extends",
       "toNode": "skills/dotnet/domain-driven-design.skill.md",
-      "toSide": "left"
+      "toSide": "right"
     },
     {
       "color": "4",

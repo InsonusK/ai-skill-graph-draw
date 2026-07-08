@@ -3,11 +3,11 @@
     {
       "color": "4",
       "fromNode": "skills/dotnet/domain-driven-design.skill.md",
-      "fromSide": "right",
+      "fromSide": "left",
       "id": "5f23802a38bc88a7",
       "label": "depends on",
       "toNode": "skills/dotnet/entities.skill.md",
-      "toSide": "left"
+      "toSide": "right"
     },
     {
       "color": "2",

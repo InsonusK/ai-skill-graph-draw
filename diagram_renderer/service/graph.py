@@ -139,7 +139,7 @@ class MetadataConfig:
 class LayoutConfig:
     """Layout engine configuration."""
 
-    engine: str = "layered"
+    engine: str = "igraph_sugiyama"
     direction: str = "LR"
 
 

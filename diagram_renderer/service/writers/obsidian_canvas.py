@@ -22,6 +22,8 @@ class ObsidianCanvasWriter(FormatWriter):
 
     def __init__(self, repo_root: Path, direction: str = "LR") -> None:
         self.repo_root = repo_root
+        # Kept for FormatWriter construction symmetry with layout engines;
+        # edge sides are derived from actual node positions, not this hint.
         self.direction = direction
 
     def write(
@@ -52,7 +54,7 @@ class ObsidianCanvasWriter(FormatWriter):
 
         edges_data: list[dict[str, Any]] = []
         for edge in graph.edges:
-            edges_data.append(self._edge_to_canvas(edge))
+            edges_data.append(self._edge_to_canvas(edge, positions))
 
         output = {"nodes": nodes_data, "edges": edges_data}
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -75,8 +77,8 @@ class ObsidianCanvasWriter(FormatWriter):
             data["subpath"] = node.subpath
         return data
 
-    def _edge_to_canvas(self, edge: Edge) -> dict[str, Any]:
-        from_side, to_side = self._sides_for_direction()
+    def _edge_to_canvas(self, edge: Edge, positions: dict[str, Rect]) -> dict[str, Any]:
+        from_side, to_side = self._sides_for_edge(edge, positions)
         edge_id = self._edge_id(edge)
         data: dict[str, Any] = {
             "id": edge_id,
@@ -92,14 +94,32 @@ class ObsidianCanvasWriter(FormatWriter):
             data["label"] = style_dict["label"]
         return data
 
-    def _sides_for_direction(self) -> tuple[str, str]:
-        mapping = {
-            "LR": ("right", "left"),
-            "RL": ("left", "right"),
-            "TB": ("bottom", "top"),
-            "BT": ("top", "bottom"),
-        }
-        return mapping.get(self.direction, ("right", "left"))
+    def _sides_for_edge(self, edge: Edge, positions: dict[str, Rect]) -> tuple[str, str]:
+        """Return (fromSide, toSide) based on where the two nodes actually sit.
+
+        Canvas coordinates have (0, 0) at the top-left, x growing right and y
+        growing down. `fromSide` is the side of `fromNode` facing `toNode`
+        (and vice versa for `toSide`), picked from the dominant axis of the
+        vector between their centers.
+        """
+        default_rect = Rect(0.0, 0.0, _DEFAULT_WIDTH, _DEFAULT_HEIGHT)
+        from_center = self._center(positions.get(edge.from_id, default_rect))
+        to_center = self._center(positions.get(edge.to_id, default_rect))
+        dx = to_center[0] - from_center[0]
+        dy = to_center[1] - from_center[1]
+        return self._side_for_delta(dx, dy), self._side_for_delta(-dx, -dy)
+
+    @staticmethod
+    def _center(rect: Rect) -> tuple[float, float]:
+        return (rect.x + rect.width / 2, rect.y + rect.height / 2)
+
+    @staticmethod
+    def _side_for_delta(dx: float, dy: float) -> str:
+        """Return which side of a node an edge exits from, given the vector
+        (dx, dy) from that node's center towards the other node's center."""
+        if abs(dx) > abs(dy):
+            return "right" if dx > 0 else "left"
+        return "bottom" if dy > 0 else "top"
 
     @staticmethod
     def _edge_id(edge: Edge) -> str:

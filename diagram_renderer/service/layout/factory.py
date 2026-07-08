@@ -16,7 +16,7 @@ _ENGINES: dict[str, type[LayoutEngine]] = {
 
 def build_layout_engine(config: dict[str, Any]) -> LayoutEngine:
     """Factory for layout engines."""
-    engine = config.get("engine", "layered")
+    engine = config.get("engine", "igraph_sugiyama")
     engine_cls = _ENGINES.get(engine)
     if engine_cls is None:
         raise ValueError(f"Unsupported layout engine: {engine}")

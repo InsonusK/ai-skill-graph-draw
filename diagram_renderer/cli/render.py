@@ -71,7 +71,7 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     )
     parser.add_argument(
         "--layout-engine",
-        default="layered",
+        default="igraph_sugiyama",
         help="Layout engine name.",
     )
     parser.add_argument(

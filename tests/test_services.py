@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -534,13 +535,13 @@ class TestIgraphSugiyamaLayoutEngine:
 
 
 class TestLayoutFactory:
-    def test_builds_layered_by_default(self) -> None:
+    def test_builds_igraph_sugiyama_by_default(self) -> None:
         engine = build_layout_engine({})
-        assert isinstance(engine, LayeredLayoutEngine)
-
-    def test_builds_igraph_sugiyama(self) -> None:
-        engine = build_layout_engine({"engine": "igraph_sugiyama", "direction": "TB"})
         assert isinstance(engine, IgraphSugiyamaLayoutEngine)
+
+    def test_builds_layered_explicitly(self) -> None:
+        engine = build_layout_engine({"engine": "layered", "direction": "TB"})
+        assert isinstance(engine, LayeredLayoutEngine)
         assert engine.direction == "TB"
 
     def test_unsupported_engine_raises(self) -> None:
@@ -596,6 +597,81 @@ class TestObsidianCanvasWriter:
         data = json.loads(canvas.read_text())
         assert data["nodes"][0]["width"] == 999
         assert data["nodes"][0]["height"] == 888
+
+    def _write_edge(
+        self, tmp_path: Path, from_rect: Rect, to_rect: Rect
+    ) -> dict[str, Any]:
+        a = tmp_path / "a.md"
+        b = tmp_path / "b.md"
+        a.write_text("")
+        b.write_text("")
+        nodes = (Node("a.md", "A", None, a, "h1"), Node("b.md", "B", None, b, "h2"))
+        graph = Graph(nodes=nodes, edges=(Edge("a.md", "b.md", "depends_on"),))
+        writer = ObsidianCanvasWriter(tmp_path)
+        destination = tmp_path / "out.canvas"
+        writer.write(graph, {"a.md": from_rect, "b.md": to_rect}, destination)
+        data = json.loads(destination.read_text())
+        return data["edges"][0]
+
+    def test_side_right_when_target_is_to_the_right(self, tmp_path: Path) -> None:
+        # dx=600 > dy=0: dominant axis is X, target is to the right.
+        edge = self._write_edge(
+            tmp_path,
+            Rect(0.0, 0.0, 400.0, 400.0),
+            Rect(600.0, 0.0, 400.0, 400.0),
+        )
+        assert edge["fromSide"] == "right"
+        assert edge["toSide"] == "left"
+
+    def test_side_left_when_target_is_to_the_left(self, tmp_path: Path) -> None:
+        edge = self._write_edge(
+            tmp_path,
+            Rect(600.0, 0.0, 400.0, 400.0),
+            Rect(0.0, 0.0, 400.0, 400.0),
+        )
+        assert edge["fromSide"] == "left"
+        assert edge["toSide"] == "right"
+
+    def test_side_bottom_when_target_is_below(self, tmp_path: Path) -> None:
+        # dx=0, dy=600: dominant axis is Y, target is below (canvas y grows down).
+        edge = self._write_edge(
+            tmp_path,
+            Rect(0.0, 0.0, 400.0, 400.0),
+            Rect(0.0, 600.0, 400.0, 400.0),
+        )
+        assert edge["fromSide"] == "bottom"
+        assert edge["toSide"] == "top"
+
+    def test_side_top_when_target_is_above(self, tmp_path: Path) -> None:
+        edge = self._write_edge(
+            tmp_path,
+            Rect(0.0, 600.0, 400.0, 400.0),
+            Rect(0.0, 0.0, 400.0, 400.0),
+        )
+        assert edge["fromSide"] == "top"
+        assert edge["toSide"] == "bottom"
+
+    def test_diagonal_prefers_dominant_horizontal_axis(self, tmp_path: Path) -> None:
+        # dx=600, dy=100: target is below and to the right, but dx > dy so
+        # the horizontal axis wins.
+        edge = self._write_edge(
+            tmp_path,
+            Rect(0.0, 0.0, 400.0, 400.0),
+            Rect(600.0, 100.0, 400.0, 400.0),
+        )
+        assert edge["fromSide"] == "right"
+        assert edge["toSide"] == "left"
+
+    def test_diagonal_prefers_dominant_vertical_axis(self, tmp_path: Path) -> None:
+        # dx=100, dy=600: target is below and to the right, but dy > dx so
+        # the vertical axis wins.
+        edge = self._write_edge(
+            tmp_path,
+            Rect(0.0, 0.0, 400.0, 400.0),
+            Rect(100.0, 600.0, 400.0, 400.0),
+        )
+        assert edge["fromSide"] == "bottom"
+        assert edge["toSide"] == "top"
 
 
 class TestWriterFactory:

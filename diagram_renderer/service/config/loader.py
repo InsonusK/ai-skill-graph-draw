@@ -66,7 +66,7 @@ class ConfigLoader:
         subpath: str | None = None,
         exclude: list[str] | None = None,
         on_unresolved: str = "skip",
-        layout_engine: str = "layered",
+        layout_engine: str = "igraph_sugiyama",
         layout_direction: str = "LR",
         output_format: str = "obsidian_canvas",
         edge_color: str | None = None,
@@ -178,7 +178,7 @@ class ConfigLoader:
         if not isinstance(data, dict):
             return LayoutConfig()
         return LayoutConfig(
-            engine=data.get("engine", "layered"),
+            engine=data.get("engine", "igraph_sugiyama"),
             direction=data.get("direction", "LR"),
         )
 
