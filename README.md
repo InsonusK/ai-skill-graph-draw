@@ -14,53 +14,7 @@ CLI-утилита для построения и актуализации ди�
 
 ## Установка
 
-### Требования
-
-- Python 3.10+
-- Git (pip устанавливает пакет прямо из репозитория)
-
-### Установка из GitHub
-
-```bash
-pip install git+https://github.com/InsonusK/ai-skill-graph-draw.git
-```
-
-После установки команда `diagram-renderer` доступна в окружении:
-
-```bash
-diagram-renderer --help
-```
-
-### Использование в другом проекте
-
-Добавьте в `requirements.txt` строку:
-
-```txt
-diagram-renderer @ git+https://github.com/InsonusK/ai-skill-graph-draw.git
-```
-
-Чтобы привязаться к конкретной версии, укажите тег или ветку:
-
-```txt
-diagram-renderer @ git+https://github.com/InsonusK/ai-skill-graph-draw.git@v0.1.0
-```
-
-### Установка для разработки
-
-```bash
-git clone git@github.com:InsonusK/ai-skill-graph-draw.git
-cd ai-skill-graph-draw
-python3 -m venv .venv
-.venv/bin/pip install -e ".[dev]"
-```
-
-### Проверка установки
-
-```bash
-diagram-renderer --help
-# или без установки пакета
-.venv/bin/python -m diagram_renderer --help
-```
+Инструкции по установке, требованиям и проверке окружения — в [`docs/installation.md`](docs/installation.md).
 
 ## Быстрый старт
 
@@ -75,22 +29,9 @@ PYTHONPATH=.. ../.venv/bin/python -m diagram_renderer render --config diagrams.y
 
 ## Использование
 
-### Через YAML-конфиг
-
-```bash
-diagram-renderer render --config diagrams.yaml [--task-id <id>] [--force]
-```
-
-### Разовая задача через CLI-аргументы
-
-```bash
-diagram-renderer render \
-  --include "skills/**/*.skill.md" \
-  --link-field depends_on \
-  --output "skills-map.canvas"
-```
-
-Подробнее о CLI см. [`docs/usage.md`](docs/usage.md).
+- Подробнее о команде `render` — в [`docs/render.md`](docs/render.md).
+- Подробнее о команде `scan` — в [`docs/scan.md`](docs/scan.md).
+- Общий обзор CLI и дополнительные примеры — в [`docs/usage.md`](docs/usage.md).
 
 ## Конфигурация
 

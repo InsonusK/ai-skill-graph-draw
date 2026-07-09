@@ -117,3 +117,156 @@ class TestCli:
     def test_missing_arguments(self, capsys: pytest.CaptureFixture[str]) -> None:
         code = main(["render"])
         assert code == 2
+
+
+class TestScanCli:
+    def test_scan_help(self, capsys: pytest.CaptureFixture[str]) -> None:
+        with pytest.raises(SystemExit) as exc_info:
+            main(["scan", "--help"])
+        assert exc_info.value.code == 0
+
+    def test_scan_finds_config_in_subdirectories(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        sub = tmp_path / "sub"
+        sub.mkdir()
+        (sub / "a.md").write_text("---\nname: A\ndepends_on:\n  - [[b.md]]\n---\n")
+        (sub / "b.md").write_text("---\nname: B\n---\n")
+        (tmp_path / "diagrams.yaml").write_text(
+            "tasks:\n"
+            "  - id: t\n"
+            "    source:\n"
+            "      include:\n"
+            "        - 'sub/*.md'\n"
+            "    links:\n"
+            "      - name: depends_on\n"
+            "        field: depends_on\n"
+            "    output:\n"
+            "      destination: sub/out.canvas\n"
+        )
+
+        code = main(
+            [
+                "scan",
+                str(tmp_path),
+                "--cache-dir",
+                str(tmp_path / "cache"),
+            ]
+        )
+        assert code == 0
+        assert (sub / "out.canvas").exists()
+
+    def test_scan_custom_filename(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "a.md").write_text("---\nname: A\n---\n")
+        (tmp_path / "custom.yaml").write_text(
+            "tasks:\n"
+            "  - id: t\n"
+            "    source:\n"
+            "      include:\n"
+            "        - '*.md'\n"
+            "    links:\n"
+            "      - name: depends_on\n"
+            "        field: depends_on\n"
+            "    output:\n"
+            "      destination: out.canvas\n"
+        )
+
+        code = main(
+            [
+                "scan",
+                str(tmp_path),
+                "--filename",
+                "custom.yaml",
+                "--cache-dir",
+                str(tmp_path / "cache"),
+            ]
+        )
+        assert code == 0
+        assert (tmp_path / "out.canvas").exists()
+
+    def test_scan_no_configs_found(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        code = main(
+            [
+                "scan",
+                str(tmp_path),
+                "--cache-dir",
+                str(tmp_path / "cache"),
+            ]
+        )
+        assert code == 0
+
+    def test_scan_missing_directory(self, tmp_path: Path) -> None:
+        missing = tmp_path / "missing"
+        code = main(
+            [
+                "scan",
+                str(missing),
+                "--cache-dir",
+                str(tmp_path / "cache"),
+            ]
+        )
+        assert code == 1
+
+    def test_scan_path_is_not_a_directory(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        file = tmp_path / "not-a-dir"
+        file.write_text("x")
+        code = main(
+            [
+                "scan",
+                str(file),
+                "--cache-dir",
+                str(tmp_path / "cache"),
+            ]
+        )
+        assert code == 1
+
+    def test_scan_task_id_filter(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "a.md").write_text("---\nname: A\n---\n")
+        (tmp_path / "diagrams.yaml").write_text(
+            "tasks:\n"
+            "  - id: run-me\n"
+            "    source:\n"
+            "      include:\n"
+            "        - '*.md'\n"
+            "    links:\n"
+            "      - name: depends_on\n"
+            "        field: depends_on\n"
+            "    output:\n"
+            "      destination: run.canvas\n"
+            "  - id: skip-me\n"
+            "    source:\n"
+            "      include:\n"
+            "        - '*.md'\n"
+            "    links:\n"
+            "      - name: depends_on\n"
+            "        field: depends_on\n"
+            "    output:\n"
+            "      destination: skip.canvas\n"
+        )
+
+        code = main(
+            [
+                "scan",
+                str(tmp_path),
+                "--task-id",
+                "run-me",
+                "--cache-dir",
+                str(tmp_path / "cache"),
+            ]
+        )
+        assert code == 0
+        assert (tmp_path / "run.canvas").exists()
+        assert not (tmp_path / "skip.canvas").exists()
