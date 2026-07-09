@@ -78,6 +78,42 @@ diagram-renderer render \
 diagram-renderer --debug render --config diagrams.yaml
 ```
 
+## Команда `scan`
+
+```bash
+diagram-renderer scan [DIRECTORY] [OPTIONS]
+```
+
+Рекурсивно ищет в указанной директории YAML-конфиги и выполняет для каждого найденного `render --config <path>`.
+
+| Опция | Описание |
+|-------|----------|
+| `DIRECTORY` | Директория для сканирования. По умолчанию текущая директория. |
+| `--filename NAME` | Имя искомого файла. По умолчанию `diagrams.yaml`. |
+| `--task-id ID` | Выполнить только задачу(и) с указанным id в каждом конфиге. Можно указывать несколько раз. |
+| `--force` | Игнорировать кэш и полностью пересчитать диаграмму. |
+| `--cache-dir PATH` | Директория для кэша. По умолчанию `.cache/diagram-renderer`. |
+
+### Примеры
+
+#### Сканировать текущую директорию
+
+```bash
+diagram-renderer scan
+```
+
+#### Сканировать конкретную директорию
+
+```bash
+diagram-renderer scan ./docs
+```
+
+#### Искать конфиги с другим именем
+
+```bash
+diagram-renderer scan . --filename diagrams-config.yaml
+```
+
 ## Коды возврата
 
 | Код | Значение |

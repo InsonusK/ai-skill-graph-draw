@@ -1,7 +1,7 @@
 ---
 name: diagram-renderer
 description: How to invoke the diagram-renderer CLI to generate or update Obsidian Canvas diagrams from markdown files with frontmatter wiki-links
-whenToUse: when you need to render or update a .canvas diagram from markdown files that declare relationships via frontmatter wiki-links, or when you need to call the diagram-renderer CLI inside this repository
+whenToUse: when you need to render or update one or more .canvas diagrams from markdown files that declare relationships via frontmatter wiki-links, when you need to scan a directory tree for diagrams.yaml configs and render each one, or when you need to call the diagram-renderer CLI inside this repository
 tags:
   - python
   - cli
@@ -30,13 +30,18 @@ tags:
 - Invoke the CLI through one of the supported entry points:
   - `diagram-renderer ...`
   - `python -m diagram_renderer ...`
-- Provide either `--config PATH` with a YAML file **or** single-task arguments (`--include` and `--output`). Never provide both.
+- Choose the right command:
+  - `render` for a single config file or a single CLI-defined task.
+  - `scan` to discover config files recursively and render each one.
+- Provide either `--config PATH` with a YAML file **or** single-task arguments (`--include` and `--output`) to `render`. Never provide both.
 - Set `--link-field NAME` when using single-task mode. Default is `depends_on`.
 - Specify the output destination. In single-task mode use `--output PATH`. In config mode set `output.destination` for every task.
 - Handle exit codes:
   - `0` — success; all requested tasks rendered or skipped.
   - `1` — one or more tasks failed.
   - `2` — CLI argument error (e.g. missing `--include` or combining `--config` with single-task args).
+- Use `scan DIRECTORY` to find all `diagrams.yaml` files under `DIRECTORY`. Default directory is the current working directory.
+- Use `scan --filename NAME` when the config files have a name other than `diagrams.yaml`.
 - Use `--force` when the cache may be stale or when you need a deterministic full re-render.
 - Ensure markdown frontmatter wiki-links are valid YAML. Quote links to avoid parsing ambiguity:
   ```yaml
@@ -47,10 +52,12 @@ tags:
 
 ## SHOULD
 - Use a YAML config file when rendering more than one diagram or when the task has non-default options.
-- Use `--task-id ID` to run only selected tasks from a config file (repeatable).
+- Use `--task-id ID` to run only selected tasks from a config file (repeatable). Works with both `render` and `scan`.
+- Use `scan` when a repository contains multiple diagrams.yaml files in different folders.
 - Use `--cache-dir PATH` to keep cache files outside the default `.cache/diagram-renderer` when needed.
 - Prefer `igraph_sugiyama` (default) for complex graphs to reduce edge crossings.
 - Add `--transitive-reduction` in single-task mode to hide redundant edges.
+- Use `scan --cache-dir PATH` to keep all discovered tasks' cache in one place.
 - Set `--on-unresolved stub` only when external links should produce placeholder nodes.
 
 ## MAY
@@ -142,12 +149,20 @@ diagram-renderer render --config diagrams.yaml --task-id skills-map
 diagram-renderer render --config diagrams.yaml --force
 ```
 
+## Force re-render during scan
+
+```bash
+diagram-renderer scan . --force
+```
+
 # Check list
 - [ ] The package is installed or the local editable install is available.
 - [ ] The chosen entry point (`diagram-renderer` or `python -m diagram_renderer`) works in the environment.
-- [ ] Input is provided through `--config` or through `--include` plus `--output`, but not both.
+- [ ] The correct command is chosen: `render` for one config/task, `scan` for multiple config files.
+- [ ] Input is provided through `--config` or through `--include` plus `--output`, but not both (for `render`).
 - [ ] The frontmatter field used for links matches `--link-field` (default `depends_on`).
 - [ ] The output destination is specified and writable.
 - [ ] Wiki-links in frontmatter are quoted to avoid YAML parsing issues.
 - [ ] Exit code `0`, `1`, or `2` is checked and handled by the caller.
+- [ ] For `scan`, the directory and `--filename` match the intended config files.
 - [ ] `--force` is used when the cache may be stale.
