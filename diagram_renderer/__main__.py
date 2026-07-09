@@ -7,6 +7,7 @@ import logging
 import sys
 
 from diagram_renderer.cli import render as render_cli
+from diagram_renderer.cli import scan as scan_cli
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -20,6 +21,7 @@ def main(argv: list[str] | None = None) -> int:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
     render_cli.register(subparsers)
+    scan_cli.register(subparsers)
 
     args = parser.parse_args(argv)
 

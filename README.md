@@ -81,6 +81,14 @@ PYTHONPATH=.. ../.venv/bin/python -m diagram_renderer render --config diagrams.y
 diagram-renderer render --config diagrams.yaml [--task-id <id>] [--force]
 ```
 
+### Сканирование нескольких конфигов
+
+```bash
+diagram-renderer scan [DIRECTORY] [--filename diagrams.yaml]
+```
+
+Команда рекурсивно находит все `diagrams.yaml` в указанной директории и рендерит каждый найденный конфиг.
+
 ### Разовая задача через CLI-аргументы
 
 ```bash
