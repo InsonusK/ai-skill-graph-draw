@@ -369,6 +369,69 @@ class TestGraphBuilder:
             ("a.md", "c.md", "extends"),
         }
 
+    def test_expand_sources_includes_linked_target_files(self, tmp_path: Path) -> None:
+        a = tmp_path / "a.md"
+        b = tmp_path / "b.md"
+        a.write_text("---\ndepends_on:\n  - [[b.md]]\n---\n")
+        b.write_text("---\nname: B\n---\n")
+
+        extractor = MetadataExtractor(tmp_path, MetadataConfig())
+        builder = GraphBuilder(
+            tmp_path,
+            extractor,
+            (LinkFilterConfig("depends_on", "frontmatter_field", "depends_on"),),
+        )
+        expanded = builder.expand_sources([a])
+        assert expanded == [a, b]
+
+    def test_expand_sources_ignores_missing_targets(self, tmp_path: Path) -> None:
+        a = tmp_path / "a.md"
+        a.write_text("---\ndepends_on:\n  - [[missing.md]]\n---\n")
+
+        extractor = MetadataExtractor(tmp_path, MetadataConfig())
+        builder = GraphBuilder(
+            tmp_path,
+            extractor,
+            (LinkFilterConfig("depends_on", "frontmatter_field", "depends_on"),),
+        )
+        expanded = builder.expand_sources([a])
+        assert expanded == [a]
+
+    def test_expand_sources_follows_link_chains(self, tmp_path: Path) -> None:
+        a = tmp_path / "a.md"
+        b = tmp_path / "b.md"
+        c = tmp_path / "c.md"
+        a.write_text("---\ndepends_on:\n  - [[b.md]]\n---\n")
+        b.write_text("---\ndepends_on:\n  - [[c.md]]\n---\n")
+        c.write_text("---\nname: C\n---\n")
+
+        extractor = MetadataExtractor(tmp_path, MetadataConfig())
+        builder = GraphBuilder(
+            tmp_path,
+            extractor,
+            (LinkFilterConfig("depends_on", "frontmatter_field", "depends_on"),),
+        )
+        expanded = builder.expand_sources([a])
+        assert expanded == [a, b, c]
+
+    def test_build_with_expanded_sources_creates_edges(self, tmp_path: Path) -> None:
+        a = tmp_path / "a.md"
+        b = tmp_path / "b.md"
+        a.write_text("---\ndepends_on:\n  - [[b.md]]\n---\n")
+        b.write_text("---\nname: B\n---\n")
+
+        extractor = MetadataExtractor(tmp_path, MetadataConfig())
+        builder = GraphBuilder(
+            tmp_path,
+            extractor,
+            (LinkFilterConfig("depends_on", "frontmatter_field", "depends_on"),),
+        )
+        graph = builder.build(builder.expand_sources([a]))
+        assert {node.id for node in graph.nodes} == {"a.md", "b.md"}
+        assert len(graph.edges) == 1
+        assert graph.edges[0].from_id == "a.md"
+        assert graph.edges[0].to_id == "b.md"
+
 
 class TestCacheManager:
     def test_save_and_load(self, tmp_path: Path) -> None:
@@ -715,3 +778,28 @@ class TestOrchestrator:
 
         # Force run should update.
         assert orchestrator.run(task, force=True) is True
+
+    def test_pipeline_auto_includes_linked_targets(self, tmp_path: Path) -> None:
+        cache = CacheManager(tmp_path / "cache")
+        orchestrator = Orchestrator(tmp_path, cache)
+
+        a = tmp_path / "a.md"
+        b = tmp_path / "b.md"
+        a.write_text("---\nname: A\ndepends_on:\n  - [[b.md]]\n---\n")
+        b.write_text("---\nname: B\n---\n")
+
+        task = RenderTask(
+            id="test",
+            source=SourceConfig(include=("a.md",)),
+            metadata=MetadataConfig(),
+            links=(LinkFilterConfig("depends_on", "frontmatter_field", "depends_on"),),
+            layout=LayoutConfig(),
+            output=OutputConfig(
+                format="obsidian_canvas",
+                destination=tmp_path / "out.canvas",
+            ),
+        )
+        assert orchestrator.run(task) is True
+        data = json.loads((tmp_path / "out.canvas").read_text())
+        assert {node["id"] for node in data["nodes"]} == {"a.md", "b.md"}
+        assert len(data["edges"]) == 1
