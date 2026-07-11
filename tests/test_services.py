@@ -263,6 +263,34 @@ class TestLinkResolver:
         link = type("Link", (), {"path_part": lambda self: "external.md"})()
         assert resolver.resolve(tmp_path / "source.md", link) == "external.md"
 
+    def test_resolves_link_without_md_extension(self, tmp_path: Path) -> None:
+        target = tmp_path / "target.md"
+        target.write_text("")
+        resolver = LinkResolver(tmp_path, {"target.md"}, "skip")
+        link = type("Link", (), {"path_part": lambda self: "target"})()
+        assert resolver.resolve(tmp_path / "source.md", link) == "target.md"
+
+    def test_resolves_link_with_dotted_name_without_md_extension(self, tmp_path: Path) -> None:
+        target = tmp_path / "target.skill.md"
+        target.write_text("")
+        resolver = LinkResolver(tmp_path, {"target.skill.md"}, "skip")
+        link = type("Link", (), {"path_part": lambda self: "target.skill"})()
+        assert resolver.resolve(tmp_path / "source.md", link) == "target.skill.md"
+
+    def test_prefers_exact_path_over_md_fallback(self, tmp_path: Path) -> None:
+        exact = tmp_path / "target"
+        md = tmp_path / "target.md"
+        exact.write_text("")
+        md.write_text("")
+        resolver = LinkResolver(tmp_path, {"target", "target.md"}, "skip")
+        link = type("Link", (), {"path_part": lambda self: "target"})()
+        assert resolver.resolve(tmp_path / "source.md", link) == "target"
+
+    def test_skips_when_neither_exact_nor_md_exists(self, tmp_path: Path) -> None:
+        resolver = LinkResolver(tmp_path, set(), "skip")
+        link = type("Link", (), {"path_part": lambda self: "missing"})()
+        assert resolver.resolve(tmp_path / "source.md", link) is None
+
 
 class TestGraphBuilder:
     def test_builds_simple_graph(self, tmp_path: Path) -> None:
