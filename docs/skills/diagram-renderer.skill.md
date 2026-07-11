@@ -44,7 +44,7 @@ tags:
 - Use `scan --filename NAME` when the config files have a name other than `diagrams.yaml`.
 - Use `--force` when the cache may be stale or when you need a deterministic full re-render.
 - Ensure markdown frontmatter wiki-links are valid YAML. Quote links to avoid parsing ambiguity:
-  ```yaml
+  ```example
   depends_on:
     - "[[skills/other.skill.md]]"
     - "[[skills/another.skill.md|Alias]]"
