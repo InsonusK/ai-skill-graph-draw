@@ -31,6 +31,38 @@ class GraphBuilder:
         self.metadata_extractor = metadata_extractor
         self.link_configs = link_configs
 
+    def expand_sources(self, files: list[Path]) -> list[Path]:
+        """Return *files* extended with any markdown files they link to.
+
+        If a link points to an existing file that is not already part of the
+        source set, that file is included so the graph can render both ends of
+        the relationship. The expansion is repeated until no new files are found.
+        """
+        files_by_path: dict[Path, Path] = {p.resolve(): p for p in files}
+        filters = [build_link_filter(config) for config in self.link_configs]
+
+        changed = True
+        while changed:
+            changed = False
+            current_files = list(files_by_path.values())
+            for path in current_files:
+                content = path.read_text(encoding="utf-8")
+                frontmatter = parse_frontmatter(path, content)
+                for filter_ in filters:
+                    for link in filter_.extract(path, content, frontmatter):
+                        target_rel = link.path_part()
+                        target_path = (self.repo_root / target_rel).resolve()
+                        if target_path.exists() and target_path not in files_by_path:
+                            files_by_path[target_path] = target_path
+                            changed = True
+                            logger.debug(
+                                "Auto-including linked file '%s' referenced from '%s'",
+                                target_rel,
+                                path,
+                            )
+
+        return sorted(files_by_path.values())
+
     def build(self, files: list[Path]) -> Graph:
         """Build Graph from *files*."""
         # First pass: parse frontmatter and metadata for every file.

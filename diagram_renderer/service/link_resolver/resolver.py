@@ -21,9 +21,9 @@ class LinkResolver:
     def resolve(self, source_path: Path, link: RawLink) -> str | None:
         """Return the node id for *link* or None if unresolved/skipped."""
         target_rel = link.path_part()
-        target_path = (self.repo_root / target_rel).resolve()
+        target_path = self._resolve_target_path(target_rel)
 
-        if not target_path.exists():
+        if target_path is None:
             logger.warning(
                 "Link in '%s' points to non-existent file '%s'; skipping",
                 source_path,
@@ -48,4 +48,22 @@ class LinkResolver:
             source_path,
             target_rel,
         )
+        return None
+
+    def _resolve_target_path(self, target_rel: str) -> Path | None:
+        """Return existing target path, trying *.md fallback if needed.
+
+        Obsidian-style wikilinks are often written without the `.md` extension.
+        We first try the literal path; if it does not exist, we append `.md` to
+        the full file name. This handles both ``foo`` -> ``foo.md`` and
+        ``foo.skill`` -> ``foo.skill.md`` conventions.
+        """
+        target_path = (self.repo_root / target_rel).resolve()
+        if target_path.exists():
+            return target_path
+
+        md_path = target_path.with_suffix(target_path.suffix + ".md")
+        if md_path.exists():
+            return md_path
+
         return None

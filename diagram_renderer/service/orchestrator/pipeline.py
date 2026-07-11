@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from diagram_renderer.functions.hashing import hash_file_set
 from diagram_renderer.service.cache.manager import CacheManager
 from diagram_renderer.service.diff.diff_engine import DiffEngine
 from diagram_renderer.service.graph import Graph, Rect, RenderTask
@@ -37,14 +38,10 @@ class Orchestrator:
         logger.info("Running task '%s'", task.id)
 
         source_collector = SourceCollector(self.repo_root)
-        files, file_set_hash = source_collector.collect(task.source)
+        files, _ = source_collector.collect(task.source)
 
         if not files:
             logger.warning("Task '%s' has no source files; skipping output", task.id)
-            return False
-
-        if not force and self.cache_manager.is_file_set_unchanged(task.id, file_set_hash):
-            logger.info("Task '%s' file set unchanged; skipping", task.id)
             return False
 
         metadata_extractor = MetadataExtractor(self.repo_root, task.metadata)
@@ -53,6 +50,13 @@ class Orchestrator:
             metadata_extractor=metadata_extractor,
             link_configs=task.links,
         )
+        files = graph_builder.expand_sources(files)
+        file_set_hash = hash_file_set(files, self.repo_root)
+
+        if not force and self.cache_manager.is_file_set_unchanged(task.id, file_set_hash):
+            logger.info("Task '%s' file set unchanged; skipping", task.id)
+            return False
+
         graph = graph_builder.build(files)
 
         if not graph.nodes:
