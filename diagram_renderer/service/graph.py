@@ -118,6 +118,7 @@ class LinkFilterConfig:
     on_unresolved: str = "skip"
     style: EdgeStyle = field(default_factory=EdgeStyle)
     transitive_reduction: bool = False
+    reverse: bool = False
 
 
 @dataclass(frozen=True, slots=True)

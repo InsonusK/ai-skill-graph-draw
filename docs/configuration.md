@@ -97,6 +97,7 @@ metadata:
 | `on_unresolved` | string | Нет | Поведение при ссылке на файл вне `source.include`: `skip` (по умолчанию) или `stub`. Физически несуществующие файлы всегда пропускаются с предупреждением. |
 | `style` | object | Нет | Визуальный стиль рёбер фильтра. |
 | `transitive_reduction` | bool | Нет | Скрывать рёбра, которые следуют из более длинного пути между теми же узлами. По умолчанию `false`. |
+| `reverse` | bool | Нет | Инвертировать направление рёбер фильтра. По умолчанию `false`. |
 
 #### style
 
@@ -137,6 +138,23 @@ links:
     style:
       color: "4"
       label: "depends on"
+```
+
+#### reverse
+
+По умолчанию ссылка во frontmatter создаёт ребро от файла, в котором она объявлена, к целевому файлу (`from_id = текущий файл`, `to_id = цель`). При `reverse: true` направление инвертируется: ребро идёт от цели к текущему файлу.
+
+Это полезно, когда одно и то же поле frontmatter нужно визуализировать с противоположным направлением зависимостей, не меняя сами markdown-файлы.
+
+```yaml
+links:
+  - name: required_for
+    type: frontmatter_field
+    field: depends_on
+    reverse: true
+    style:
+      color: "2"
+      label: "required for"
 ```
 
 ### layout
