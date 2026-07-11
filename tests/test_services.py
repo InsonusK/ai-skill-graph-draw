@@ -170,6 +170,63 @@ class TestConfigLoader:
         tasks = loader.load_from_file(config_path)
         assert tasks == []
 
+    def test_parses_reverse(self, tmp_path: Path) -> None:
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text(
+            "tasks:\n"
+            "  - id: t\n"
+            "    source:\n"
+            "      include:\n"
+            "        - '*.md'\n"
+            "    links:\n"
+            "      - name: depends_on\n"
+            "        field: depends_on\n"
+            "        reverse: true\n"
+            "    output:\n"
+            "      destination: out.canvas\n"
+        )
+        loader = ConfigLoader(tmp_path)
+        tasks = loader.load_from_file(config_path)
+        assert len(tasks) == 1
+        assert tasks[0].links[0].reverse is True
+
+    def test_reverse_defaults_to_false(self, tmp_path: Path) -> None:
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text(
+            "tasks:\n"
+            "  - id: t\n"
+            "    source:\n"
+            "      include:\n"
+            "        - '*.md'\n"
+            "    links:\n"
+            "      - name: depends_on\n"
+            "        field: depends_on\n"
+            "    output:\n"
+            "      destination: out.canvas\n"
+        )
+        loader = ConfigLoader(tmp_path)
+        tasks = loader.load_from_file(config_path)
+        assert tasks[0].links[0].reverse is False
+
+    def test_invalid_reverse_type(self, tmp_path: Path) -> None:
+        config_path = tmp_path / "config.yaml"
+        config_path.write_text(
+            "tasks:\n"
+            "  - id: bad\n"
+            "    source:\n"
+            "      include:\n"
+            "        - '*.md'\n"
+            "    links:\n"
+            "      - name: depends_on\n"
+            "        field: depends_on\n"
+            "        reverse: not-a-bool\n"
+            "    output:\n"
+            "      destination: out.canvas\n"
+        )
+        loader = ConfigLoader(tmp_path)
+        tasks = loader.load_from_file(config_path)
+        assert tasks == []
+
 
 class TestSourceCollector:
     def test_collects_and_hashes(self, tmp_path: Path) -> None:
@@ -368,6 +425,30 @@ class TestGraphBuilder:
             ("b.md", "c.md", "depends_on"),
             ("a.md", "c.md", "extends"),
         }
+
+    def test_reverses_edge_direction(self, tmp_path: Path) -> None:
+        a = tmp_path / "a.md"
+        b = tmp_path / "b.md"
+        a.write_text("---\ndepends_on:\n  - [[b.md]]\n---\n")
+        b.write_text("---\nname: B\n---\n")
+
+        extractor = MetadataExtractor(tmp_path, MetadataConfig())
+        builder = GraphBuilder(
+            tmp_path,
+            extractor,
+            (
+                LinkFilterConfig(
+                    "depends_on",
+                    "frontmatter_field",
+                    "depends_on",
+                    reverse=True,
+                ),
+            ),
+        )
+        graph = builder.build([a, b])
+        assert len(graph.edges) == 1
+        assert graph.edges[0].from_id == "b.md"
+        assert graph.edges[0].to_id == "a.md"
 
 
 class TestCacheManager:

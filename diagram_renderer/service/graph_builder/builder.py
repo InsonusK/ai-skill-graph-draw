@@ -69,10 +69,13 @@ class GraphBuilder:
                     if target_id == node_id:
                         logger.warning("Self-loop detected for node '%s'; skipping", node_id)
                         continue
+                    from_id, to_id = (
+                        (target_id, node_id) if config.reverse else (node_id, target_id)
+                    )
                     edges.append(
                         Edge(
-                            from_id=node_id,
-                            to_id=target_id,
+                            from_id=from_id,
+                            to_id=to_id,
                             filter_name=config.name,
                             style=config.style,
                         )

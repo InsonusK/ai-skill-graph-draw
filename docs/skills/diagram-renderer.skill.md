@@ -64,6 +64,7 @@ tags:
 - Use `--edge-color VALUE` and `--edge-label TEXT` in single-task mode to style edges.
 - Use `--subpath ANCHOR` to append an anchor (e.g. `#Capabilities`) to every node link in the Canvas.
 - Use `--layout-engine layered` when you want a pure-Python layout without the `python-igraph` dependency.
+- Use `reverse: true` on a link filter in YAML config to invert edge direction (from target back to source) without changing markdown files.
 
 ## SHOULD NOT
 - Combine `--config` with single-task arguments such as `--include`, `--exclude`, or `--output`.
@@ -153,6 +154,24 @@ diagram-renderer render --config diagrams.yaml --force
 
 ```bash
 diagram-renderer scan . --force
+```
+
+## Invert edge direction in config
+
+```yaml
+tasks:
+  - id: skills-map
+    source:
+      include:
+        - "skills/**/*.skill.md"
+    links:
+      - name: required_for
+        type: frontmatter_field
+        field: depends_on
+        reverse: true
+    output:
+      format: obsidian_canvas
+      destination: "skills-required-for.canvas"
 ```
 
 # Check list

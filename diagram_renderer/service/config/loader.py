@@ -72,6 +72,7 @@ class ConfigLoader:
         edge_color: str | None = None,
         edge_label: str | None = None,
         transitive_reduction: bool = False,
+        reverse: bool = False,
     ) -> RenderTask:
         """Build a single task from explicit CLI arguments."""
         return RenderTask(
@@ -89,6 +90,7 @@ class ConfigLoader:
                     on_unresolved=on_unresolved,
                     style=EdgeStyle(color=edge_color, label=edge_label),
                     transitive_reduction=transitive_reduction,
+                    reverse=reverse,
                 ),
             ),
             layout=LayoutConfig(engine=layout_engine, direction=layout_direction),
@@ -162,6 +164,11 @@ class ConfigLoader:
                 raise ConfigValidationError(
                     f"Field 'transitive_reduction' of link filter '{name}' must be a boolean"
                 )
+            reverse = item.get("reverse", False)
+            if not isinstance(reverse, bool):
+                raise ConfigValidationError(
+                    f"Field 'reverse' of link filter '{name}' must be a boolean"
+                )
             configs.append(
                 LinkFilterConfig(
                     name=name,
@@ -170,6 +177,7 @@ class ConfigLoader:
                     on_unresolved=on_unresolved,
                     style=style,
                     transitive_reduction=transitive_reduction,
+                    reverse=reverse,
                 )
             )
         return tuple(configs)
